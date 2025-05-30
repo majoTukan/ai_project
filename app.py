@@ -75,7 +75,7 @@ else:
     # ---------------- Pie de página ----------------
     st.markdown("---")
     # st.markdown("Ver ranking de puntajes")
-    if st.button("Ver ranking de puntajes"):
+    if st.button("🏆 Ver ranking de puntajes"):
             st.switch_page("pages/ranking.py") # 
     # ---------------- Pie de página ----------------
     st.markdown("---")

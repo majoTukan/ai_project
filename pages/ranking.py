@@ -11,7 +11,18 @@ if df_scores.empty:
 else:
     # Ordenar por score descendente, luego por fecha ascendente (timestamp)
     df_scores['timestamp'] = pd.to_datetime(df_scores['timestamp'])
-    df_scores = df_scores.sort_values(by=['score', 'timestamp'], ascending=[False, True])
+     # Obtener los IDs únicos de trivia
+    trivia_ids = df_scores['trivia_id'].unique()
 
-    # Mostrar tabla con columnas seleccionadas
-    st.dataframe(df_scores[['user', 'trivia_id', 'score', 'total', 'timestamp']])
+    for trivia in trivia_ids:
+        st.subheader(f"📋 Ranking para Trivia: {trivia}")
+        df_trivia = df_scores[df_scores['trivia_id'] == trivia].copy()
+
+        # Ordenar por score descendente y timestamp ascendente
+        df_trivia = df_trivia.sort_values(by=['score', 'timestamp'], ascending=[False, True])
+        df_trivia = df_trivia.reset_index(drop=True)
+        df_trivia.index += 1
+        df_trivia.index.name = "Puesto"
+
+        # Mostrar tabla con columnas seleccionadas
+        st.dataframe(df_trivia[['user', 'score', 'total', 'timestamp']], hide_index=False)
