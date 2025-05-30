@@ -66,13 +66,14 @@ def trivia_generator(trivia_id):
         index=opciones.index(st.session_state[f"respuesta_{idx}"]) if st.session_state[f"respuesta_{idx}"] in opciones else 0,
         disabled=st.session_state[f"verificada_{idx}"]
     )
-    st.session_state[f"respuesta_{idx}"] = respuesta
+    # st.session_state[f"respuesta_{idx}"] = respuesta
 
     # Botón Verificar (solo si no se ha verificado ya)
     if not st.session_state[f"verificada_{idx}"]:
         if st.button("Verificar", key=f"verificar_{idx}"):
             correcta = actual.get("correcta") or actual.get("respuesta_correcta")
             correcto = respuesta == correcta
+            st.session_state[f"respuesta_{idx}"] = respuesta
 
             st.session_state.resultados.append({
                 "pregunta": actual["pregunta"],
@@ -106,7 +107,7 @@ def trivia_generator(trivia_id):
                 st.rerun()
         else:
             st.success("🎉 ¡Has completado la trivia!")
-            st.info(f"Obtuviste {st.session_state.aciertos} de {len(preguntas)} respuestas correctas.")
+            # st.info(f"Obtuviste {st.session_state.aciertos} de {len(preguntas)} respuestas correctas.")
             # ② Guarda el score una única vez (si no lo has guardado aún)
             if "score_guardado" not in st.session_state:
                 guardar_score_en_sheets(
