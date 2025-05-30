@@ -9,7 +9,14 @@ from utils.questions_ai import (
 from utils.google_sheets import guardar_usuario_en_sheets
 
 st.set_page_config(page_title="Trivia Tukan", layout="centered")
-
+hide_pages_nav = """
+    <style>
+        section[data-testid="stSidebarNav"] {
+            display: none;
+        }
+    </style>
+"""
+st.markdown(hide_pages_nav, unsafe_allow_html=True)
 # ---------------- Funciones auxiliares ----------------
 @st.cache_data
 def cargar_datos():
@@ -65,6 +72,11 @@ else:
             st.session_state.preguntas = generar_preguntas_vehiculos(df_vehicles, n=10)
             st.switch_page("pages/vehicles.py") # asegúrate que existe
 
+    # ---------------- Pie de página ----------------
+    st.markdown("---")
+    # st.markdown("Ver ranking de puntajes")
+    if st.button("Ver ranking de puntajes"):
+            st.switch_page("pages/ranking.py") # 
     # ---------------- Pie de página ----------------
     st.markdown("---")
     st.markdown("ℹ️ Próximamente más categorías y preguntas…")
