@@ -1,6 +1,7 @@
 import streamlit as st
 from utils.questions import *
 from utils.questions_ai import *
+from utils.leaderboard import record_score, get_leaderboard
 
 def trivia_generator():
     # Verifica que se hayan cargado las preguntas correctamente desde app.py

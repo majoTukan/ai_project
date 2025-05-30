@@ -28,27 +28,41 @@ def resetear_sesion_trivia():
     st.session_state.resultados = []
 # ------------------------------------------------------
 
-# Carga inicial de datos
-df_turism, df_vehicles = cargar_datos()
-
-# ---------------- UI principal ----------------
+if "user_name" not in st.session_state:
+    st.session_state.user_name = None
+# Mostrar siempre el título
 st.title("🧠 Bienvenido a la Trivia Tukan")
-st.subheader("Selecciona una categoría")
 
-col1, col2, col3 = st.columns(3)
+if st.session_state.user_name is None:
+    with st.form("form_user_name", clear_on_submit=False):
+        user_name_input = st.text_input("Por favor, ingresa tu nombre para comenzar:")
+        submitted = st.form_submit_button("Confirmar nombre")
 
-with col1:
-    if st.button("🎒 Iniciar trivia de Turismo"):
-        resetear_sesion_trivia()
-        st.session_state.preguntas = generar_preguntas_turismo(df_turism, n=10)
-        st.switch_page("pages/turism.py")   # asegúrate que existe
+        if submitted and user_name_input:
+            st.session_state.user_name = user_name_input
+        # st.experimental_rerun()
 
-with col2:
-    if st.button("🚗 Iniciar trivia de ventas de vehículos"):
-        resetear_sesion_trivia()
-        st.session_state.preguntas = generar_preguntas_vehiculos(df_vehicles, n=10)
-        st.switch_page("pages/vehicles.py") # asegúrate que existe
+else:
+    # Carga inicial de datos
+    df_turism, df_vehicles = cargar_datos()
 
-# ---------------- Pie de página ----------------
-st.markdown("---")
-st.markdown("ℹ️ Próximamente más categorías y preguntas…")
+    # ---------------- UI principal ----------------
+    st.subheader(f"Selecciona una categoría, {st.session_state.user_name}")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        if st.button("🎒 Iniciar trivia de Turismo"):
+            resetear_sesion_trivia()
+            st.session_state.preguntas = generar_preguntas_turismo(df_turism, n=10)
+            st.switch_page("pages/turism.py")   # asegúrate que existe
+
+    with col2:
+        if st.button("🚗 Iniciar trivia de ventas de vehículos"):
+            resetear_sesion_trivia()
+            st.session_state.preguntas = generar_preguntas_vehiculos(df_vehicles, n=10)
+            st.switch_page("pages/vehicles.py") # asegúrate que existe
+
+    # ---------------- Pie de página ----------------
+    st.markdown("---")
+    st.markdown("ℹ️ Próximamente más categorías y preguntas…")
