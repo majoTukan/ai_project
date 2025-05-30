@@ -3,13 +3,15 @@ import gspread
 import os
 from datetime import datetime
 import pandas as pd
-
+import json
+import streamlit as st
 
 def guardar_usuario_en_sheets(user_name):
     # json_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
     json_path = "proyecto-aplicar-sql-76873ce6150b.json"
     # print(json_path)
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+    json_path = json.loads(json.dumps(st.secrets["gcp_service_account"]))
 
     creds = ServiceAccountCredentials.from_json_keyfile_name(json_path, scope)
     client = gspread.authorize(creds)
@@ -26,7 +28,9 @@ def guardar_score_en_sheets(user_name, trivia_id, score, total):
         'https://spreadsheets.google.com/feeds',
         'https://www.googleapis.com/auth/drive'
     ]
-    json_path = "proyecto-aplicar-sql-76873ce6150b.json"
+    # json_path = "proyecto-aplicar-sql-76873ce6150b.json"
+    json_path = json.loads(json.dumps(st.secrets["gcp_service_account"]))
+
 
     creds = ServiceAccountCredentials.from_json_keyfile_name(json_path, scope)
     client = gspread.authorize(creds)
@@ -48,7 +52,9 @@ def guardar_score_en_sheets(user_name, trivia_id, score, total):
 
 def obtener_datos_scores():
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-    json_path = "proyecto-aplicar-sql-76873ce6150b.json"
+    # json_path = "proyecto-aplicar-sql-76873ce6150b.json"
+    json_path = json.loads(json.dumps(st.secrets["gcp_service_account"]))
+
     creds = ServiceAccountCredentials.from_json_keyfile_name(json_path, scope)
     client = gspread.authorize(creds)
     sheet = client.open('TriviaScores').sheet1
