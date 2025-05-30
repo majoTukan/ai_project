@@ -13,7 +13,7 @@ def guardar_usuario_en_sheets(user_name):
     scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
     json_path = st.secrets["gcp_service_account"]
 
-    creds = ServiceAccountCredentials.from_json_keyfile_name(json_path, scope)
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(json_path, scope)
     client = gspread.authorize(creds)
 
     sheet = client.open('TriviaScores').sheet1  # o usa .worksheet('nombre_hoja')
@@ -32,7 +32,7 @@ def guardar_score_en_sheets(user_name, trivia_id, score, total):
     json_path = st.secrets["gcp_service_account"]
 
 
-    creds = ServiceAccountCredentials.from_json_keyfile_name(json_path, scope)
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(json_path, scope)
     client = gspread.authorize(creds)
     sheet = client.open('TriviaScores').sheet1
 
@@ -55,7 +55,7 @@ def obtener_datos_scores():
     # json_path = "proyecto-aplicar-sql-76873ce6150b.json"
     json_path = st.secrets["gcp_service_account"]
 
-    creds = ServiceAccountCredentials.from_json_keyfile_name(json_path, scope)
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(json_path, scope)
     client = gspread.authorize(creds)
     sheet = client.open('TriviaScores').sheet1
 
