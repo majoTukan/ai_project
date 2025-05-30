@@ -1,4 +1,3 @@
-# Importamos las bibliotecas necesarias
 import streamlit as st
 from utils.questions import *
 from utils.questions_ai import *
@@ -19,6 +18,12 @@ if "resultados" not in st.session_state:
 preguntas = st.session_state.preguntas
 idx = st.session_state.pregunta_actual
 actual = preguntas[idx]
+
+# ---------- PUNTAJE DINÁMICO ----------
+st.markdown(
+    f"### 🏆 Puntaje: **{st.session_state.aciertos}/{len(preguntas)}** preguntas correctas"
+)
+# --------------------------------------
 
 # Asegura que tenga tipo definido (por compatibilidad con preguntas viejas)
 tipo = actual.get("tipo", "opcion_multiple")
@@ -42,6 +47,10 @@ if f"verificada_{idx}" not in st.session_state:
     st.session_state[f"verificada_{idx}"] = False
 if f"respuesta_{idx}" not in st.session_state:
     st.session_state[f"respuesta_{idx}"] = None
+# Inicializa contador de aciertos si no existe aún
+if "aciertos" not in st.session_state:
+    st.session_state.aciertos = 0
+
 # ---------------------------------------
 
 
@@ -68,6 +77,8 @@ if not st.session_state[f"verificada_{idx}"]:
             "es_correcta": correcto,
             "explicacion": actual["explicacion"]
         })
+        if correcto:
+            st.session_state.aciertos += 1
 
         st.session_state[f"verificada_{idx}"] = True
         st.rerun()
@@ -91,5 +102,7 @@ if st.session_state[f"verificada_{idx}"]:
             st.rerun()
     else:
         st.success("🎉 ¡Has completado la trivia!")
+        st.info(f"Obtuviste {st.session_state.aciertos} de {len(preguntas)} respuestas correctas.")
         if st.button("Volver al menú principal"):
+            st.session_state.aciertos = 0
             st.switch_page("app.py")

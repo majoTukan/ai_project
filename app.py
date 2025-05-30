@@ -2,36 +2,48 @@ import streamlit as st
 from utils.questions import *
 from utils.questions_ai import *
 
-
 st.set_page_config(page_title="Trivia Tukan", layout="centered")
 
-# Título de la app
-st.title("🧠 Bienvenido a la Trivia Tukan")
-
-# Menú principal con opciones (solo una por ahora)
-st.subheader("Selecciona una categoría")
-# Menú principal
-# menu = st.sidebar.selectbox("Menú", ["Inicio", "Trivia de Turismo"])
+# ---------------- Funciones auxiliares ----------------
 @st.cache_data
 def cargar_datos():
-    return load_data()
+    """Carga y devuelve los dataframes que se usan en las trivias."""
+    df_turism = load_turism_data()
+    df_vehicles = load_vehicles_data()
+    return df_turism, df_vehicles
 
-# Cargamos los datos turísticos
-df = cargar_datos()
-# Cuando el usuario da clic en el botón, iniciamos la trivia
-if st.button("🎒 Iniciar Trivia de Turismo"):
-    # Generamos las preguntas AI y las almacenamos en la sesión
-    preguntas = generar_preguntas(df, n=10)
+def resetear_sesion_trivia():
+    """Elimina todos los elementos de sesión relacionados con una trivia anterior."""
+    for key in list(st.session_state.keys()):
+        if key.startswith(("respuesta_", "verificada_")):
+            del st.session_state[key]
 
-    # Inicializamos los estados que necesitaremos
-    st.session_state.preguntas = preguntas  # Lista de preguntas
-    st.session_state.pregunta_actual = 0    # Índice de la pregunta actual
-    st.session_state.resultados = []        # Para almacenar respuestas del usuario
+    st.session_state.pregunta_actual = 0
+    st.session_state.aciertos = 0
+    st.session_state.resultados = []
+# ------------------------------------------------------
 
-    # Redirigimos a la página de preguntas
-    st.switch_page("pages/turism.py")  # Asegúrate de que este archivo esté en /pages
+# Carga inicial de datos
+df_turism, df_vehicles = cargar_datos()
 
-# Pie de página o mensaje adicional
+# ---------------- UI principal ----------------
+st.title("🧠 Bienvenido a la Trivia Tukan")
+st.subheader("Selecciona una categoría")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    if st.button("🎒 Iniciar trivia de Turismo"):
+        resetear_sesion_trivia()
+        st.session_state.preguntas = generar_preguntas_turismo(df_turism, n=10)
+        st.switch_page("pages/turism.py")   # asegúrate que existe
+
+with col2:
+    if st.button("🚗 Iniciar trivia de ventas de vehículos"):
+        resetear_sesion_trivia()
+        st.session_state.preguntas = generar_preguntas_vehiculos(df_vehicles, n=10)
+        st.switch_page("pages/vehicles.py") # asegúrate que existe
+
+# ---------------- Pie de página ----------------
 st.markdown("---")
-st.markdown("ℹ️ Próximamente más categorías y preguntas...")
-
+st.markdown("ℹ️ Próximamente más categorías y preguntas…")
