@@ -1,6 +1,11 @@
 import streamlit as st
 from utils.questions import *
-from utils.questions_ai import *
+from utils.questions_ai import (
+    load_turism_data,
+    load_vehicles_data,
+    generar_preguntas_turismo,
+    generar_preguntas_vehiculos
+)
 
 st.set_page_config(page_title="Trivia Tukan", layout="centered")
 
