@@ -2,9 +2,11 @@ import streamlit as st
 from utils.questions import *
 from utils.questions_ai import *
 from utils.trivia_generator import *
+from utils.ui_helpers import mostrar_usuario_en_esquina
 
 st.set_page_config(page_title="Trivia de Vehículos", layout="centered")
-trivia_generator()
+mostrar_usuario_en_esquina()
+trivia_generator('vehicles')
 # # Verifica que se hayan cargado las preguntas correctamente desde app.py
 # if "preguntas" not in st.session_state or "pregunta_actual" not in st.session_state:
 #     st.error("⚠️ Primero inicia la trivia desde el menú de inicio.")

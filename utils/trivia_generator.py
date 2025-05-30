@@ -2,8 +2,13 @@ import streamlit as st
 from utils.questions import *
 from utils.questions_ai import *
 from utils.leaderboard import record_score, get_leaderboard
+from utils.google_sheets import guardar_score_en_sheets
+from utils.ui_helpers import mostrar_usuario_en_esquina
 
-def trivia_generator():
+def trivia_generator(trivia_id):
+    # mostrar_usuario_en_esquina()
+    st.write("user:", st.session_state.get("user_name"))
+
     # Verifica que se hayan cargado las preguntas correctamente desde app.py
     if "preguntas" not in st.session_state or "pregunta_actual" not in st.session_state:
         st.error("⚠️ Primero inicia la trivia desde el menú de inicio.")
@@ -102,6 +107,15 @@ def trivia_generator():
         else:
             st.success("🎉 ¡Has completado la trivia!")
             st.info(f"Obtuviste {st.session_state.aciertos} de {len(preguntas)} respuestas correctas.")
+            # ② Guarda el score una única vez (si no lo has guardado aún)
+            if "score_guardado" not in st.session_state:
+                guardar_score_en_sheets(
+                    user_name = st.session_state.user_name,   # nombre del jugador
+                    trivia_id = trivia_id,                    # o "vehiculos"
+                    score     = st.session_state.aciertos,
+                    total     = len(preguntas)
+                )
+                st.session_state.score_guardado = True       # marca que ya se guardó
             if st.button("Volver al menú principal"):
                 st.session_state.aciertos = 0
                 st.switch_page("app.py")

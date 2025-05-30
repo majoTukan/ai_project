@@ -6,6 +6,7 @@ from utils.questions_ai import (
     generar_preguntas_turismo,
     generar_preguntas_vehiculos
 )
+from utils.google_sheets import guardar_usuario_en_sheets
 
 st.set_page_config(page_title="Trivia Tukan", layout="centered")
 
@@ -40,6 +41,7 @@ if st.session_state.user_name is None:
 
         if submitted and user_name_input:
             st.session_state.user_name = user_name_input
+            guardar_usuario_en_sheets(st.session_state.user_name)
         # st.experimental_rerun()
 
 else:
@@ -47,18 +49,18 @@ else:
     df_turism, df_vehicles = cargar_datos()
 
     # ---------------- UI principal ----------------
-    st.subheader(f"Selecciona una categoría, {st.session_state.user_name}")
+    st.subheader(f"Selecciona una trivia, {st.session_state.user_name}")
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        if st.button("🎒 Iniciar trivia de Turismo"):
+        if st.button("🎒 Trivia de Turismo"):
             resetear_sesion_trivia()
             st.session_state.preguntas = generar_preguntas_turismo(df_turism, n=10)
             st.switch_page("pages/turism.py")   # asegúrate que existe
 
     with col2:
-        if st.button("🚗 Iniciar trivia de ventas de vehículos"):
+        if st.button("🚗 Trivia de ventas de vehículos"):
             resetear_sesion_trivia()
             st.session_state.preguntas = generar_preguntas_vehiculos(df_vehicles, n=10)
             st.switch_page("pages/vehicles.py") # asegúrate que existe
