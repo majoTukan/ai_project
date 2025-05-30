@@ -118,5 +118,13 @@ def trivia_generator(trivia_id):
                 )
                 st.session_state.score_guardado = True       # marca que ya se guardó
             if st.button("Volver al menú principal"):
+                for key in list(st.session_state.keys()):
+                    if key.startswith(("respuesta_", "verificada_")):
+                        del st.session_state[key]
+
+                st.session_state.pregunta_actual = 0
+                st.session_state.aciertos = 0
+                st.session_state.resultados = []
+
                 st.session_state.aciertos = 0
                 st.switch_page("app.py")

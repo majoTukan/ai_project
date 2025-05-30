@@ -23,6 +23,9 @@ else:
         df_trivia = df_trivia.reset_index(drop=True)
         df_trivia.index += 1
         df_trivia.index.name = "Puesto"
-
+        df_trivia['date'] = df_trivia['timestamp'].dt.strftime('%d-%m-%Y')
         # Mostrar tabla con columnas seleccionadas
-        st.dataframe(df_trivia[['user', 'score', 'total', 'timestamp']], hide_index=False)
+        st.dataframe(df_trivia[['user', 'score', 'total', 'date']], hide_index=False)
+
+if st.button("Volver al menú principal"):
+    st.switch_page("app.py")
