@@ -176,10 +176,11 @@ def generar_preguntas_inpc_con_gpt(data, uniques, n:int = 10):
     3. **Evita cualquier tipo de solapamiento o dependencia entre preguntas.** Ninguna pregunta debe sugerir, insinuar ni revelar total o parcialmente la respuesta de otra.
     4. No incluyas cifras o fechas específicas en la **pregunta**. **En la explicación sí debes incluir cifras reales** para ayudar a entender la respuesta (por ejemplo, “X% de aumento en el INPC”).
     5. Las preguntas deben estar redactadas con claridad y sin ambigüedad.
-    6. Las explicaciones deben ser educativas y aportar valor, con cifras o contexto adicional cuando sea útilb y convirtiendo decimales a formato porcentual cuando corresponda (ejemplo: 0.05 REPRESENTA EL 5%).
+    6. Las explicaciones deben ser educativas y aportar valor, con cifras o contexto adicional cuando sea útil, y convirtiendo decimales a formato porcentual cuando corresponda (ejemplo: 0.05 REPRESENTA EL 5%).
+    7. **IMPORTANTE:** La posición de la respuesta correcta debe estar distribuida aleatoriamente entre las opciones. No pongas la respuesta correcta casi siempre como primera opción. Revisa y reorganiza las opciones para que estén mezcladas.
 
     Formato esperado:
-    Genera una lista en formato JSON con preguntas de opción múltiple sobre el INPC en México. Evita que la respuesta correcta sea casi siempre la primera opción.
+    Genera una lista en formato JSON con preguntas de opción múltiple sobre el INPC en México. Evita que la respuesta correcta esté siempre en la primera posición.
     [
     {{
         "tipo": "opcion_multiple" o "verdadero_falso",
