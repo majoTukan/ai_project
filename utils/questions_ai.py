@@ -577,3 +577,11 @@ def generar_preguntas_inpc(df, n=10):
     data = resumen_ampliado_inpc(df_completo)
     return generar_preguntas_inpc_con_gpt(data, uniques, n)
 
+
+
+@st.cache_data
+def generar_data_adivina_inpc(df):
+    data = df[df['date']==df.date.max()].copy() #only max date
+    data_grouped = data.groupby('mex_inegi_cpi_product_structure')['Índice Nacional de Precios al Consumidor (INPC) (suma).'].mean()
+
+    return data, data_grouped.to_dict()
