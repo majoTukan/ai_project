@@ -3,8 +3,10 @@ from utils.questions import *
 from utils.questions_ai import (
     load_turism_data,
     load_vehicles_data,
+    load_inpc_data,
     generar_preguntas_turismo,
-    generar_preguntas_vehiculos
+    generar_preguntas_vehiculos,
+    generar_preguntas_inpc
 )
 from utils.google_sheets import guardar_usuario_en_sheets
 
@@ -23,7 +25,8 @@ def cargar_datos():
     """Carga y devuelve los dataframes que se usan en las trivias."""
     df_turism = load_turism_data()
     df_vehicles = load_vehicles_data()
-    return df_turism, df_vehicles
+    df_inpc = load_inpc_data()
+    return df_turism, df_vehicles, df_inpc
 
 def resetear_sesion_trivia():
     """Elimina todos los elementos de sesión relacionados con una trivia anterior."""
@@ -53,7 +56,7 @@ if st.session_state.user_name is None:
 
 else:
     # Carga inicial de datos
-    df_turism, df_vehicles = cargar_datos()
+    df_turism, df_vehicles, df_inpc = cargar_datos()
 
     # ---------------- UI principal ----------------
     st.subheader(f"Selecciona una trivia, {st.session_state.user_name}")
@@ -71,6 +74,12 @@ else:
             resetear_sesion_trivia()
             st.session_state.preguntas = generar_preguntas_vehiculos(df_vehicles, n=10)
             st.switch_page("pages/vehicles.py") # asegúrate que existe
+
+    with col3:
+        if st.button("🛒📈 Trivia de INPC"):
+            resetear_sesion_trivia()
+            st.session_state.preguntas = generar_preguntas_inpc(df_inpc, n=10)
+            st.switch_page("pages/inpc.py") # asegúrate que existe
 
     # ---------------- Pie de página ----------------
     st.markdown("---")
