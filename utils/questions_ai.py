@@ -1,7 +1,7 @@
 import pandas as pd
 import random
 import json
-
+import re
 import os
 import streamlit as st  # solo si estás usando Streamlit aquí
 import openai
@@ -26,6 +26,17 @@ def load_turism_data():
 def load_vehicles_data():
     token = os.getenv('API_TUKAN')
     df = pd.read_csv(f"https://client.tukanmx.com/visualizations/retrieve_query_csv/es/91fce6c7-4636-4e51-b72f-1b0ee60e6400/{token}", delimiter='|')
+    df["date"] = pd.to_datetime(df["date"], errors="coerce")  # convierte a datetime
+    # Eliminar columnas que terminan en '__ref'
+    df = df[[col for col in df.columns if not col.endswith("__ref")]]
+    if df["date"].isnull().any():
+        st.warning("⚠️ Algunas fechas no se pudieron convertir. Revisa el archivo CSV.")
+    return df
+
+@st.cache_data
+def load_inpc_data():
+    token = os.getenv('API_TUKAN')
+    df = pd.read_csv(f"https://client.tukanmx.com/visualizations/retrieve_query_csv/es/0ccbd4cd-cbbd-4bac-8531-38e74539a53d/{token}", delimiter='|')
     df["date"] = pd.to_datetime(df["date"], errors="coerce")  # convierte a datetime
     # Eliminar columnas que terminan en '__ref'
     df = df[[col for col in df.columns if not col.endswith("__ref")]]
@@ -150,8 +161,62 @@ def generar_pregunta_vehiculos_con_gpt(data, uniques, n:int = 10):
     except Exception as e:
         raise ValueError(f"No se pudo parsear la respuesta: {content}") from e
 
+def generar_preguntas_inpc_con_gpt(data, uniques, n:int = 10):
+    prompt_usuario = f"""
+    Actúa como un experto en economía y educación. A partir de los siguientes datos en formato JSON sobre el Índice Nacional de Precios al Consumidor (INPC) en México:
+
+    {data}
+    Se te comparten los valores únicos de los estados disponibles y de los productos: {uniques}.
+    Tu tarea es generar {n} preguntas didácticas en formato JSON. Las preguntas deben ser **interesantes, variadas, no obvias** y fomentar el pensamiento crítico. Deben ser de tipo "opcion_multiple" o "verdadero_falso".
+
+    Sigue estas reglas estrictamente:
+
+    1. Cubre distintos enfoques de análisis, como: variaciones por estado, productos más caros y baratos, evolución del INPC por año, impacto de la inflación en diferentes categorías, etc.
+    2. **Cada pregunta debe abordar un enfoque o idea distinta.**
+    3. **Evita cualquier tipo de solapamiento o dependencia entre preguntas.** Ninguna pregunta debe sugerir, insinuar ni revelar total o parcialmente la respuesta de otra.
+    4. No incluyas cifras o fechas específicas en la **pregunta**. **En la explicación sí debes incluir cifras reales** para ayudar a entender la respuesta (por ejemplo, “X% de aumento en el INPC”).
+    5. Las preguntas deben estar redactadas con claridad y sin ambigüedad.
+    6. Las explicaciones deben ser educativas y aportar valor, con cifras o contexto adicional cuando sea útilb y convirtiendo decimales a formato porcentual cuando corresponda (ejemplo: 0.05 REPRESENTA EL 5%).
+
+    Formato esperado:
+    Genera una lista en formato JSON con preguntas de opción múltiple sobre el INPC en México. Evita que la respuesta correcta sea casi siempre la primera opción.
+    [
+    {{
+        "tipo": "opcion_multiple" o "verdadero_falso",
+        "pregunta": "...",
+        "opciones": ["...", "...", "...", "..."],  # Solo dos opciones si es verdadero/falso
+        "respuesta_correcta": "...",
+        "explicacion": "..."  # Incluye cifras reales cuando aporten contexto educativo, sin spoilear otras preguntas
+    }},
+    ...
+    ]
+
+    **IMPORTANTE:** Revisa todas las preguntas antes de finalizar y asegúrate de que ninguna dependa del contenido, tema o respuesta de otra. Todas deben poder responderse de forma independiente sin conocer las demás.
+
+    Nota: Para preguntas de verdadero o falso, usa únicamente las opciones ["Verdadero", "Falso"], de otra forma solo debe haber 4 posibles opciones.
+    """
 
 
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": "Eres un generador de preguntas tipo trivia sobre el Índice Nacional de Precios al Consumidor (INPC) en México. Responde solo con JSON válido. No agregues comentarios, explicaciones o texto adicional fuera del JSON."},
+            {"role": "user", "content": prompt_usuario},
+            ],
+        temperature=0.7
+    )
+    content = response.choices[0].message.content
+    cleaned = re.sub(r"^```(?:json)?|```$", "", content.strip(), flags=re.MULTILINE).strip()
+
+    # Parsear la respuesta
+    try:
+        preguntas = json.loads(cleaned)
+        assert isinstance(preguntas, list), "El resultado no es una lista de preguntas."
+        return preguntas
+    except Exception as e:
+        raise ValueError(f"No se pudo parsear la respuesta: {content}, tokens: {int(len(content.split()) * 1.33)}") from e
+
+#---Resumir data turismo---
 def resume_turism_data(df):
     df['year'] = pd.to_datetime(df['date']).dt.year
     df['month'] = pd.to_datetime(df['date']).dt.month
@@ -353,3 +418,161 @@ def generar_preguntas_vehiculos(df, n=10):
                'types_uniques':types}
     data = resume_vehicles_data(df_completo)
     return generar_pregunta_vehiculos_con_gpt(data, uniques, n)
+
+def resumen_ampliado_inpc(df):
+    df['date'] = pd.to_datetime(df['date'])
+    df['year'] = df['date'].dt.year
+    df['month'] = df['date'].dt.month
+
+    df = df.rename(columns={
+        "Índice Nacional de Precios al Consumidor (INPC) (suma).": "inpc"
+    })
+
+    resumen = {}
+    resumen['descripcion_tabla'] = (
+        "Índice Nacional de Precios al Consumidor (INPC) por Objeto de Gasto a Nivel Estatal. "
+        "Proporciona valores mensuales del INPC para diferentes productos y servicios, "
+        "por entidad federativa, desde 2018 hasta 2025."
+    )
+
+    year_min = df['year'].min()
+    year_max = df['year'].max()
+    resumen['rango_anios'] = {'inicio': int(year_min), 'fin': int(year_max)}
+
+    # ---------- Productos más caros y baratos por año ----------
+    productos_por_anio = {}
+    for y in sorted(df['year'].unique()):
+        subset = df[df['year'] == y]
+        avg_by_product = subset.groupby('mex_inegi_cpi_product_structure')['inpc'].mean()
+        productos_por_anio[y] = {
+            'productos_mas_caros': avg_by_product.sort_values(ascending=False).head(5).round(2).to_dict(),
+            'productos_mas_baratos': avg_by_product.sort_values(ascending=True).head(5).round(2).to_dict()
+        }
+    resumen['productos_por_anio'] = productos_por_anio
+
+    # ---------- Estados más caros y baratos (último año) ----------
+    latest_year = df['year'].max()
+    df_latest = df[df['year'] == latest_year]
+    state_avg = df_latest.groupby('geography')['inpc'].mean()
+    resumen['estados_mas_caros'] = state_avg.sort_values(ascending=False).head(5).round(2).to_dict()
+    resumen['estados_mas_baratos'] = state_avg.sort_values(ascending=True).head(5).round(2).to_dict()
+
+    # ---------- Productos más caros y baratos (último año) ----------
+    product_avg_latest = df_latest.groupby('mex_inegi_cpi_product_structure')['inpc'].mean()
+    resumen['productos_mas_caros_recientes'] = product_avg_latest.sort_values(ascending=False).head(5).round(2).to_dict()
+    resumen['productos_mas_baratos_recientes'] = product_avg_latest.sort_values().head(5).round(2).to_dict()
+
+    # ---------- Productos con mayor inflación 2020–2024 ----------
+    inpc_avg = df.groupby(['mex_inegi_cpi_product_structure', 'year'])['inpc'].mean().unstack()
+    if 2020 in inpc_avg.columns and 2024 in inpc_avg.columns:
+        crecimiento_pct = ((inpc_avg[2024] - inpc_avg[2020]) / inpc_avg[2020])
+        resumen['productos_mayor_inflacion_2020_2024'] = crecimiento_pct.sort_values(ascending=False).head(5).round(3).to_dict()
+        resumen['productos_menor_inflacion_2020_2024'] = crecimiento_pct.sort_values().head(5).round(3).to_dict()
+
+    # ---------- Estados con mayor inflación por año ----------
+    inflacion_por_estado_anio = {}
+    for y in range(year_min + 1, year_max + 1):
+        pivot = df[df['year'].isin([y-1, y])].groupby(['geography', 'year'])['inpc'].mean().unstack()
+        if y-1 in pivot.columns and y in pivot.columns:
+            delta = ((pivot[y] - pivot[y-1]) / pivot[y-1]).sort_values(ascending=False)
+            inflacion_por_estado_anio[y] = {
+                'top_5_estados_mayor_inflacion': delta.head(5).round(3).to_dict(),
+                'top_5_estados_menor_inflacion': delta.tail(5).round(3).to_dict()
+            }
+    resumen['inflacion_estados_por_anio'] = inflacion_por_estado_anio
+
+    # ---------- Insumos que se elevaron en pandemia y se mantuvieron caros ----------
+    if 2019 in inpc_avg.columns and 2020 in inpc_avg.columns and 2024 in inpc_avg.columns:
+        aumento_pandemia = (inpc_avg[2020] - inpc_avg[2019]) / inpc_avg[2019]
+        mantuvo_precio = (inpc_avg[2024] - inpc_avg[2020]) / inpc_avg[2020]
+        combinado = (aumento_pandemia > 0.1) & (mantuvo_precio > 0)
+        resumen['productos_alzaron_en_pandemia_y_siguen_caros'] = inpc_avg.loc[combinado].mean(axis=1).sort_values(ascending=False).head(5).round(2).to_dict()
+
+    # ---------- Estado donde X producto es más caro y más barato ----------
+    # estado_producto = (
+    #     df[df['year'] == df['year'].max()]
+    #     .groupby(['mex_inegi_cpi_product_structure', 'geography'])['inpc']
+    #     .mean()
+    #     .unstack()
+    # )
+
+    # resumen['estado_por_producto_mas_y_menos_caro'] = {}
+
+    # for producto, fila in estado_producto.iterrows():
+    #     estado_mas_caro = fila.idxmax()
+    #     estado_mas_barato = fila.idxmin()
+    #     resumen['estado_por_producto_mas_y_menos_caro'][producto] = {
+    #         'mas_caro': {
+    #             'estado': estado_mas_caro,
+    #             'inpc': round(fila[estado_mas_caro], 2)
+    #         },
+    #         'mas_barato': {
+    #             'estado': estado_mas_barato,
+    #             'inpc': round(fila[estado_mas_barato], 2)
+    #         }
+    #     }
+
+    # ---------- Top estados más caros/baratos por categoría clave ----------
+    productos_clave = {
+        "renta_vivienda": "Renta de vivienda",
+        "vivienda_propia": "Vivienda propia",
+        "educacion_universidad": "Universidad",
+        "alimentacion_tortilla": "Tortilla de maíz",
+        "automoviles": "Automóviles",
+        # "seguro de auto": "Seguro de automóvil",
+        "Huevo": "Huevo",
+        "consulta_medica": "Consulta médica",
+        "estacionamiento": "Estacionamiento",
+        "cine": "Cine",
+        "hoteles": "Hoteles",
+        "gasolina_bajo_octanaje": "Gasolina de bajo octanaje",
+    }
+
+    resumen['top_estados_por_categoria'] = {}
+    ultimo_anio = df['year'].max()
+
+    for clave, producto in productos_clave.items():
+        df_prod = df[df['mex_inegi_cpi_product_structure'].str.contains(producto, case=False, na=False)]
+        df_prod = df_prod[df_prod['year'] == ultimo_anio]
+
+        if df_prod.empty:
+            continue
+
+        inpc_estado = df_prod.groupby('geography')['inpc'].mean().sort_values()
+
+        resumen['top_estados_por_categoria'][clave] = {
+            'top_5_mas_baratos': inpc_estado.head(5).round(2).to_dict(),
+            'top_5_mas_caros': inpc_estado.tail(5).sort_values(ascending=False).round(2).to_dict()
+        }
+    
+
+
+    return resumen
+
+
+@st.cache_data
+def generar_preguntas_inpc(df, n=10):
+    
+    # df["date"] = pd.to_datetime(df["date"]).dt.strftime("%Y-%m-%d")
+    # Asegúrate de que 'date' esté en formato datetime
+    df['date'] = pd.to_datetime(df['date'])
+
+    # Extraer año y mes como columnas auxiliares
+    df['year'] = df['date'].dt.year
+    df['month'] = df['date'].dt.month
+
+    # Contar cuántos meses únicos hay por año
+    meses_por_anio = df.groupby('year')['month'].nunique()
+    anios_completos = meses_por_anio[meses_por_anio == 12].index
+    df_completo = df[df['year'].isin(anios_completos)].copy()
+    df_completo['date'] = df_completo['date'].dt.strftime('%Y-%m-%d')
+
+    # Elimina las columnas auxiliares si ya no las necesitas
+    df_completo = df_completo.drop(columns=['year', 'month'])
+    products = list(df_completo.mex_inegi_cpi_product_structure.unique())
+    states = list(df_completo.geography.unique())
+    uniques = {'products':products,
+               'states':states}
+    data = resumen_ampliado_inpc(df_completo)
+    return generar_preguntas_inpc_con_gpt(data, uniques, n)
+
