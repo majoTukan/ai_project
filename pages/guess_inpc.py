@@ -23,7 +23,7 @@ x, y = st.session_state.data
 @st.cache_data
 def generar_imagen_categoria(categoria):
     response = openai.images.generate(
-        model="dall-e-2",
+        model="dall-e-3",
         prompt=f"An illustration representing propuct(s) of the category: {categoria}. Flat style.",
         size="512x512",
         quality="standard",
