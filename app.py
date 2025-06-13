@@ -6,7 +6,8 @@ from utils.questions_ai import (
     load_inpc_data,
     generar_preguntas_turismo,
     generar_preguntas_vehiculos,
-    generar_preguntas_inpc
+    generar_preguntas_inpc,
+    generar_data_adivina_inpc,
 )
 from utils.google_sheets import guardar_usuario_en_sheets
 
@@ -26,6 +27,7 @@ def cargar_datos():
     df_turism = load_turism_data()
     df_vehicles = load_vehicles_data()
     df_inpc = load_inpc_data()
+  # Carga datos para adivinar INPC
     return df_turism, df_vehicles, df_inpc
 
 def resetear_sesion_trivia():
@@ -81,6 +83,11 @@ else:
             st.session_state.preguntas = generar_preguntas_inpc(df_inpc, n=10)
             st.switch_page("pages/inpc.py") # asegúrate que existe
 
+    with col1:
+        if st.button("🛒 Adivina el INPC"):
+            resetear_sesion_trivia()
+            st.session_state.data = generar_data_adivina_inpc(df_inpc)
+            st.switch_page("pages/guess_inpc.py")   # asegúrate que existe
     # ---------------- Pie de página ----------------
     st.markdown("---")
     # st.markdown("Ver ranking de puntajes")
