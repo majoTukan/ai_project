@@ -25,7 +25,7 @@ def generar_imagen_categoria(categoria):
     response = openai.images.generate(
         model="dall-e-3",
         prompt=f"An illustration representing propuct(s) of the category: {categoria}. Flat style.",
-        size="512x512",
+        size="1024x1024",
         quality="standard",
         n=1
     )
