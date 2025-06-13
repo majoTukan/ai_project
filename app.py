@@ -4,7 +4,6 @@ from utils.questions_ai import (
     load_turism_data,
     load_vehicles_data,
     load_inpc_data,
-    load_inpc_guess_data,
     generar_preguntas_turismo,
     generar_preguntas_vehiculos,
     generar_preguntas_inpc,
@@ -87,7 +86,7 @@ else:
     with col1:
         if st.button("🛒 Adivina el INPC"):
             resetear_sesion_trivia()
-            st.session_state.preguntas = generar_data_adivina_inpc(df_inpc, n=10)
+            st.session_state.data = generar_data_adivina_inpc(df_inpc)
             st.switch_page("pages/guess_inpc.py")   # asegúrate que existe
     # ---------------- Pie de página ----------------
     st.markdown("---")
